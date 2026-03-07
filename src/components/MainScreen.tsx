@@ -45,22 +45,22 @@ const getPrayerTimeline = (data) => {
         d.setDate(d.getDate() + dayOffset)
         d.setHours(h, m, 0, 0)
         list.push({ name, date: d })
-        console.log("list push", { name, d })
+
     }
 
     if (data.yesterdayIsha) {
         add(-1, "Isha", data.yesterdayIsha)
-        console.log("yesterday Isha")
+
     }
 
     Object.entries(data.today.timings).filter(([name, time]) => !skipList.includes(name)).forEach(([name, time]) => {
         add(0, name, time)
-        console.log("todays ", name, time)
+
     })
 
     if (data.tomorrowsFajr) {
         add(1, "Fajr", data.tomorrowsFajr)
-        console.log("tmrs Fajr")
+
     }
 
     return list.sort((a, b) => a.date - b.date)
@@ -146,9 +146,9 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
             }
 
             setScreenState("ready")
-            console.log("apiresult on frontend")
+
             setData(apiResult.today)
-            console.log("here, the error of today")
+
             const timeline = getPrayerTimeline(apiResult)
             const { current, next } = getCurrentAndNextPrayerTime(timeline)
             console.log("got the timeline", { current, next })
@@ -186,7 +186,6 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
                             </div>
                             <div className="flex justify-end">
 
-
                                 <Dialog>
                                     <DialogTrigger>
                                         <EllipsisVertical className="stroke-1 size-5 bg-3A3843 hover:scale-110 transition-transform duration-200 cursor-pointer" />
@@ -196,18 +195,14 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
                                         <DialogDescription className="hidden"></DialogDescription>
                                         <Settings setSettings={setSettings} />
                                     </DialogContent>
-
                                 </Dialog>
-
-
-
-
+                                
                             </div>
                         </div>
 
-                            <div className="p-3 flex flex-col justify-center text-center">
+                            <div className="p-1 flex flex-col justify-center text-center">
                                 <p
-                                    className="font-numans">
+                                    className="font-numans p-1">
                                     {data.date.hijri.month.en}, {data.date.hijri.day}, {data.date.hijri.year} {data.date.hijri.designation.abbreviated}
                                 </p>
                                 {currentPrayer &&
@@ -226,23 +221,23 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
 
                             </div>
 
-                            <div className="p-3 justify-center text-center">
+                            <div className="p-1 mt-4 justify-center text-center">
                                 {nextPrayer &&
                                     <p
-                                        className="font-numans text-sm">
+                                        className="font-numans text-[16px]">
                                         {timeLeft} left in {nextPrayer?.name}
                                     </p>
                                 }
-                                <div className="mt-8 grid grid-cols-6 gap-x-1 justify-around">
+                                <div className="mt-10 grid grid-cols-6 gap-x-2 justify-around">
                                     {AllPrayersDisplay.map(({ timingKey, Icon }) => {
                                         const time = data?.timings?.[timingKey]
                                         // if (!time || !Icon) return null;
 
                                         return (
                                             <div key={timingKey} className="h-10 flex flex-col items-center">
-                                                <div className="align-middle items-center h-5"><Icon /></div>
-                                                <p className="font-prompt font-medium pt-1">{timingKey}</p>
-                                                <p className="font-numans text-[13px]">{time}</p>
+                                                <div className={`align-middle items-center h-5 ${timingKey===nextPrayer?.name? "opacity-100" : "opacity-50"}`}><Icon /></div>
+                                                <p className={`font-prompt pt-1 ${timingKey===nextPrayer?.name? "font-medium": "font-normal" }`}>{timingKey}</p>
+                                                <p className={`font-numans ${timingKey===nextPrayer?.name? "text-[14px]" : "text-[13px]"}`}>{time}</p>
                                             </div>
                                         )
                                     })}
@@ -260,5 +255,6 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
 
     )
 }
+
 
 

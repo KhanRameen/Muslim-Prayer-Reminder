@@ -37,7 +37,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
     const [,name,nextAlarmTime]=alarm.name.split("-").map(String)
 
-    if( now > Number(nextAlarmTime)- 10*60*1000){
+    if( now > Number(nextAlarmTime) - 10*60*1000){
       return 
     }
     
@@ -45,7 +45,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   }
 
   if(alarm.name.startsWith("snooze-")){
-    console.log("Listenig to Snooze Alarm")
+    console.log("Listening to Snooze Alarm")
     const now = Date.now()
     const [,name,nextPrayerTime]=alarm.name.split("-").map(String)
 
@@ -148,7 +148,7 @@ const getPrayerData = async () => {
       console.log("New API Result",prayerData)
       return {apiResult:prayerData}
     }
-    catch(err){
+    catch(err:any){
        console.log("error getting prayer data", err);
       await chrome.storage.local.set({ apiError: err.message });
       return {apiResult:null}
@@ -159,7 +159,7 @@ const getPrayerData = async () => {
 const fetchPrayerAPI = async (formData:PrayerSettingsForm, date:string) => {
   try {
     console.log("Fetching Api")
-    const res = await fetch(
+    const res:any = await fetch(
       `https://api.aladhan.com/v1/timingsByCity/${date}?city=${formData.City}&country=${formData.Country.isoCode}&method=${formData.CalculationMethod}&shafaq=general&tune=5%2C${formData.Tune.Fajr}%2C${formData.Tune.Sunrise}%2C${formData.Tune.Dhuhr}%2C${formData.Tune.Asr}%2C${formData.Tune.Maghrib}%2C0%2C${formData.Tune.Isha}%2C-6&school=${formData.JuristicMethod}&midnightMode=${formData.MidnightMode}timezonestring=UTC&calendarMethod=UAQ`
     );
 
@@ -174,7 +174,7 @@ const fetchPrayerAPI = async (formData:PrayerSettingsForm, date:string) => {
     }
 
     return response.data
-  } catch (err) {
+  } catch (err:any) {
     console.log("error fetching prayer time", err);
     await chrome.storage.local.set({ apiError: err.message });
   }
@@ -215,7 +215,7 @@ const scheduleNextMidnight = () => {
 
   next.setHours(24, 0, 0, 0);
 
-  const minutesTillMidnight = (next - now) / 1000 / 60;
+  const minutesTillMidnight = (Number(next) - Number(now)) / 1000 / 60;
 
   chrome.alarms.create("midnightUpdate", {
     when: Date.now() + minutesTillMidnight * 60 * 1000,
@@ -274,7 +274,7 @@ const buildPrayerTimelineforAlarm = ({apiResult}:any) => {
       .filter(([name, time]) => !skipList.includes(name))
       .forEach(([name, time]) => {
         console.log("Object Entries")
-        const timestamp = buildTimestamps(date, time.toString())
+        const timestamp = buildTimestamps(date, String(time))
         prayersToday.push({ name, time:timestamp.toString() })
         console.log("Prayers today push")
     }) //Array

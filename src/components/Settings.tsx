@@ -71,7 +71,7 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
 
     return (
         <ScrollArea className="h-115 rounded-md w-full">
-            <div className="w-full flex flex-col gap-y-4 p-1">
+            <div className="w-full flex flex-col p-1">
                 <form onSubmit={handleSubmit(savePrayerSettings)} className="space-y-4">
                     {/* <h1 className="font-medium text-lg">Notification Settings</h1>
 
@@ -106,80 +106,83 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
  */}
 
 
-                    <h1 className="font-medium text-lg">Prayer Time Settings</h1>
+                    <h1 className="font-medium text-[19px]">Prayer Time Settings</h1>
 
-                    <Label className="mb-2">Country</Label>
-                    <Controller
-                        name="Country"
-                        control={control}
-                        rules={{
-                            validate: (value) => (value && value.isoCode !== "") ? true : "Country is required"
-                        }}
+                    <div>
+                        <Label className="mb-2">Country</Label>
+                        <Controller
+                            name="Country"
+                            control={control}
+                            rules={{
+                                validate: (value) => (value && value.isoCode !== "") ? true : "Country is required"
+                            }}
 
-                        render={({ field }) => (
-                            <>
-                                <Select
-                                    onValueChange={(isoCode) => {
-                                        console.log("on value change country")
-                                        const selected = countries.find((c) => c?.isoCode === isoCode)
-                                        field.onChange({ isoCode, name: selected?.name ?? "" })
-                                        clearErrors("Country")
-                                    }}
-                                    value={field.value?.isoCode} required>
-                                    <SelectTrigger className="w-[320] mt-2">
-                                        <SelectValue placeholder="Select Your Country"> {field.value?.name ?? "Select Your Country"}</SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent className="h-80">
-                                        {countries.filter(Boolean).map((country) => (country &&
-                                            <SelectItem
-                                                key={country.isoCode}
-                                                value={country.isoCode}>{country!.name}
-                                            </SelectItem>
-                                        )
-                                        )}
-                                    </SelectContent>
-                                </Select>
+                            render={({ field }) => (
+                                <>
+                                    <Select
+                                        onValueChange={(isoCode) => {
+                                            console.log("on value change country")
+                                            const selected = countries.find((c) => c?.isoCode === isoCode)
+                                            field.onChange({ isoCode, name: selected?.name ?? "" })
+                                            clearErrors("Country")
+                                        }}
+                                        value={field.value?.isoCode} required>
+                                        <SelectTrigger className="w-[320] mt-2">
+                                            <SelectValue placeholder="Select Your Country"> {field.value?.name ?? "Select Your Country"}</SelectValue>
+                                        </SelectTrigger>
+                                        <SelectContent className="h-80">
+                                            {countries.filter(Boolean).map((country) => (country &&
+                                                <SelectItem
+                                                    key={country.isoCode}
+                                                    value={country.isoCode}>{country!.name}
+                                                </SelectItem>
+                                            )
+                                            )}
+                                        </SelectContent>
+                                    </Select>
 
-                                {
-                                    errors.Country && <p className="text-red-600 text-xs">{errors.Country.message}</p>
-                                }
-                            </>
+                                    {
+                                        errors.Country && <p className="text-red-600 text-xs">{errors.Country.message}</p>
+                                    }
+                                </>
 
-                        )} />
+                            )} />
+                    </div>
 
+                    <div>
 
-                    <Label className="mb-2">City</Label>
-                    <Controller
-                        name="City"
-                        control={control}
-                        rules={{ validate: (value) => value !== "" ? true : "City is required" }}
-                        render={({ field }) => (
-                            <>
-                                <Select disabled={!country.isoCode} onValueChange={field.onChange} value={field.value} required>
-                                    <SelectTrigger className="w-[320] mt-2">
-                                        <SelectValue placeholder="Select Your City" />
-                                    </SelectTrigger>
-                                    <SelectContent className="h-80">
-                                        {
-                                            (allCities.length === 0 && country.isoCode) ?
-                                                <SelectItem value={country!.isoCode}>{country!.name}</SelectItem>
-                                                : allCities.filter(Boolean).map(city =>
-                                                    <SelectItem key={city!.stateCode} value={city!.name}>
-                                                        {city!.name}
-                                                    </SelectItem>
-                                                )
-                                        }
-                                    </SelectContent>
-                                </Select>
+                        <Label className="mb-2">City</Label>
+                        <Controller
+                            name="City"
+                            control={control}
+                            rules={{ validate: (value) => value !== "" ? true : "City is required" }}
+                            render={({ field }) => (
+                                <>
+                                    <Select disabled={!country.isoCode} onValueChange={field.onChange} value={field.value} required>
+                                        <SelectTrigger className="w-[320] mt-2">
+                                            <SelectValue placeholder="Select Your City" />
+                                        </SelectTrigger>
+                                        <SelectContent className="h-80">
+                                            {
+                                                (allCities.length === 0 && country.isoCode) ?
+                                                    <SelectItem value={country!.isoCode}>{country!.name}</SelectItem>
+                                                    : allCities.filter(Boolean).map(city =>
+                                                        <SelectItem key={city!.stateCode} value={city!.name}>
+                                                            {city!.name}
+                                                        </SelectItem>
+                                                    )
+                                            }
+                                        </SelectContent>
+                                    </Select>
 
-                                {
-                                    errors.Country && <p className="text-red-600 text-xs">{errors.Country.message}</p>
-                                }
-                            </>
+                                    {
+                                        errors.Country && <p className="text-red-600 text-xs">{errors.Country.message}</p>
+                                    }
+                                </>
 
-                        )}
-                    />
-
+                            )}
+                        />
+                    </div>
 
                     <Label>Calculation Method</Label>
                     <Controller
@@ -198,62 +201,66 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                             </Select>
                         )} />
 
+                    <div className="my-0.5">
+                        <Label>Juristic Method / School</Label>
+                        <Controller
+                            name="JuristicMethod"
+                            control={control}
+                            render={({ field }) => (
+                                <RadioGroup className="flex gap-3 mt-3 mb-5 px-2 " value={field.value} onValueChange={field.onChange}>
+                                    <RadioGroupItem value="0" id="0" className="cursor-pointer" />
+                                    <Label htmlFor="0">Shafi</Label>
+                                    <RadioGroupItem value="1" id="1" className="cursor-pointer" />
+                                    <Label htmlFor="1">Hanafi (Later Asr)</Label>
+                                </RadioGroup>
+                            )} />
 
-                    <Label>Juristic Method / School</Label>
-                    <Controller
-                        name="JuristicMethod"
-                        control={control}
-                        render={({ field }) => (
-                            <RadioGroup className="flex gap-3 mt-3 mb-5" value={field.value} onValueChange={field.onChange}>
-                                <RadioGroupItem value="0" id="0" className="cursor-pointer" />
-                                <Label htmlFor="0">Shafi</Label>
-                                <RadioGroupItem value="1" id="1" className="cursor-pointer" />
-                                <Label htmlFor="1">Hanafi (Later Asr)</Label>
-                            </RadioGroup>
-                        )} />
+                    </div>
+                    <div className="py-1">
+                        <Controller
+                            name="MidnightMode"
+                            control={control}
+                            defaultValue={"0"}
+                            render={({ field }) => (
+                                <div className="flex items-center gap-3">
 
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger className="flex gap-1 cursor-pointer mt-1">                                            <InfoIcon />
+                                                <Label htmlFor="midnightMode">Midnight Mode</Label>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Determines Jafri method for Calculating Midnight (Mid Sunset to Fajr)</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
 
-                    <Controller
-                        name="MidnightMode"
-                        control={control}
-                        defaultValue={"0"}
-                        render={({ field }) => (
-                            <div className="flex items-center gap-3">
-
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger className="flex gap-1 cursor-pointer mt-1">                                            <InfoIcon />
-                                            <Label htmlFor="midnightMode">Midnight Mode</Label>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Determines Jafri method for Calculating Midnight (Mid Sunset to Fajr)</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-
-                                <Switch
-                                    id="midnightMode"
-                                    checked={field.value === "1"}
-                                    onCheckedChange={(checked) => {
-                                        field.onChange(checked ? "1" : "0");  // turn boolean back into string
-                                    }} />
-                            </div>
-
-
-                        )} />
+                                    <Switch
+                                        id="midnightMode"
+                                        checked={field.value === "1"}
+                                        onCheckedChange={(checked) => {
+                                            field.onChange(checked ? "1" : "0");  // turn boolean back into string
+                                        }} />
+                                </div>
 
 
+                            )} />
 
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger className="flex gap-1 cursor-pointer mt-1">                <InfoIcon />
-                                <Label> Adjust prayer time</Label>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-[340] pl-3">
-                                <p className="max-w-fit">Tune your prayer time in minutes. Adjusting time of one prayer does not affect time of other prayers</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    </div>
+                    <div>
+
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger className="flex gap-1 cursor-pointer mt-1">                <InfoIcon />
+                                    <Label> Adjust prayer time</Label>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[340] pl-3">
+                                    <p className="max-w-fit">Tune your prayer time in minutes. Adjusting time of one prayer does not affect time of other prayers</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                    </div>
 
                     <div className="gap-2 grid grid-cols-3">
                         {Object.keys(tune).map(prayer => (
@@ -304,5 +311,4 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
     )
 }
 
-//todo: add tool tip
-// {/* To Do: Add reminder Type */}
+//todo: add notification setting form and logic.
