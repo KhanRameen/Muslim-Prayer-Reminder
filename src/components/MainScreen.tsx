@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } 
 import { Settings } from "./Settings"
 import { LoadingScreen } from "./LoadingScreen"
 import type { PrayerSettingsForm } from "./types/types"
+import { ErrorScreen } from "./ErrorScreen"
 
 const AllPrayersDisplay = [
     {
@@ -130,55 +131,68 @@ const getTimeFormated = (date: Date) => {
 
 
 export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettingsForm, setSettings: (Settings: PrayerSettingsForm) => void }) => {
-    const [screenState, setScreenState] = useState<"loading" | "ready">("loading")
-    const [data, setData] = useState(null)
+    const [screenState, setScreenState] = useState<"loading" | "ready" | "error">("loading")
+    const [data, setData] = useState<any>(null)
     const [currentPrayer, setCurrentPrayer] = useState<{ name: string, date: Date }>()
     const [nextPrayer, setNextPrayer] = useState<{ name: string, date: Date }>()
     const [timeLeft, setTimeLeft] = useState<string>()
     const [location, setLocation] = useState({ city: "", country: "" })
 
     useEffect(() => {
-        console.log("main useEffect")
+    const loadData = () => {
+        chrome.storage.local.get(["apiResult", "apiError"], ({ apiResult , apiError}) => {
+             if (apiError || !apiResult.today) {
+        setScreenState("error")
+        return
+    }
 
-        chrome.storage.local.get(["apiResult"], ({ apiResult }) => {
-            if (!apiResult) {
-                setScreenState("loading")
-            }
+    if (!apiResult) {
+        setScreenState("loading")
+        return
+    }
 
             setScreenState("ready")
-
             setData(apiResult.today)
 
             const timeline = getPrayerTimeline(apiResult)
             const { current, next } = getCurrentAndNextPrayerTime(timeline)
-            console.log("got the timeline", { current, next })
 
             setCurrentPrayer(current)
             setNextPrayer(next)
-
             setTimeLeft(() => getTimeLeft(next?.date!))
-
-
         })
 
         chrome.storage.local.get("prayerSettings", ({ prayerSettings }) => {
+            if (!prayerSettings) return
             const country = prayerSettings.Country.name
             const city = prayerSettings.City
-
             setLocation({ city, country })
         })
-    }, [settings])
+    }
 
-    // const timeLeftText = getTimeLeft(nextPrayer?.date)
-    // setTimeLeft(timeLeftText)
+    loadData()
+
+    const listener = (changes: Record<string, chrome.storage.StorageChange>) => {
+        if (changes.apiResult || changes.prayerSettings) {
+            loadData()
+        }
+        if (changes.apiError && !changes.apiResult) {
+        setScreenState("error")
+    }
+
+    }
+
+    chrome.storage.onChanged.addListener(listener)
+    return () => chrome.storage.onChanged.removeListener(listener)
+
+}, [])
 
 
-
-    return (
+return (
         <>
-            {screenState === 'loading' ? <LoadingScreen /> :
+            {screenState === 'loading' ? <LoadingScreen /> : 
                 <div className="flex flex-col gap-y-3 p-0.5 text-[#3A3843]">
-                    {data &&
+                
                         <><div className="grid grid-cols-2 mb-14">
                             <div className="flex gap-x-1.5">
                                 <LocationIcon />
@@ -200,7 +214,10 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
                             </div>
                         </div>
 
-                            <div className="p-1 flex flex-col justify-center text-center">
+                           { screenState === 'error' || !data ? <ErrorScreen /> 
+                           : data && 
+                                <>
+                                <div className="p-1 flex flex-col justify-center text-center">
                                 <p
                                     className="font-numans p-1">
                                     {data.date.hijri.month.en}, {data.date.hijri.day}, {data.date.hijri.year} {data.date.hijri.designation.abbreviated}
@@ -236,8 +253,8 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
                                         return (
                                             <div key={timingKey} className="h-10 flex flex-col items-center">
                                                 <div className={`align-middle items-center h-5 ${timingKey===nextPrayer?.name? "opacity-100" : "opacity-50"}`}><Icon /></div>
-                                                <p className={`font-prompt pt-1 ${timingKey===nextPrayer?.name? "font-medium": "font-normal" }`}>{timingKey}</p>
-                                                <p className={`font-numans ${timingKey===nextPrayer?.name? "text-[14px]" : "text-[13px]"}`}>{time}</p>
+                                                <p className={`font-prompt pt-1 ${timingKey===nextPrayer?.name? "font-medium opacity-95": "font-normal" }`}>{timingKey}</p>
+                                                <p className={`font-numans ${timingKey===nextPrayer?.name? "text-sm opacity-95" : "text-[13px]"}`}>{time}</p>
                                             </div>
                                         )
                                     })}
@@ -246,9 +263,10 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
 
 
                             </div>
+                            </>}
 
                         </>
-                    }
+                
 
                 </div>}
         </>
