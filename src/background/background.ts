@@ -107,7 +107,7 @@ const getPrayerData = async () => {
   //get data from local storage
   const {prayerSettings} = await getStorage("prayerSettings") 
 
-   await chrome.storage.local.remove(["apiResult", "apiError"])
+  await chrome.storage.local.remove(["apiResult", "apiError"])
 
     try{
     

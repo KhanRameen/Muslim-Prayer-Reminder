@@ -141,7 +141,7 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
     useEffect(() => {
     const loadData = () => {
         chrome.storage.local.get(["apiResult", "apiError"], ({ apiResult , apiError}) => {
-             if (apiError || !apiResult.today) {
+        if (apiError || !apiResult.today) {
         setScreenState("error")
         return
     }
@@ -163,7 +163,10 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
         })
 
         chrome.storage.local.get("prayerSettings", ({ prayerSettings }) => {
-            if (!prayerSettings) return
+            if (!prayerSettings) {
+                setScreenState("error")
+                return
+            }
             const country = prayerSettings.Country.name
             const city = prayerSettings.City
             setLocation({ city, country })
@@ -204,7 +207,7 @@ return (
                                     <DialogTrigger>
                                         <EllipsisVertical className="stroke-1 size-5 bg-3A3843 hover:scale-110 transition-transform duration-200 cursor-pointer" />
                                     </DialogTrigger>
-                                    <DialogContent className="bg-transparent">
+                                    <DialogContent className="bg-transparent h-full">
                                         <DialogTitle className="hidden"></DialogTitle>
                                         <DialogDescription className="hidden"></DialogDescription>
                                         <Settings setSettings={setSettings} />
@@ -254,7 +257,7 @@ return (
                                             <div key={timingKey} className="h-10 flex flex-col items-center">
                                                 <div className={`align-middle items-center h-5 ${timingKey===nextPrayer?.name? "opacity-100" : "opacity-50"}`}><Icon /></div>
                                                 <p className={`font-prompt pt-1 ${timingKey===nextPrayer?.name? "font-medium opacity-95": "font-normal" }`}>{timingKey}</p>
-                                                <p className={`font-numans ${timingKey===nextPrayer?.name? "text-sm opacity-95" : "text-[13px]"}`}>{time}</p>
+                                                <p className={`font-numans ${timingKey===nextPrayer?.name? "text-sm" : "text-[13px] opacity-95"}`}>{time}</p>
                                             </div>
                                         )
                                     })}

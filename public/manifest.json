@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Prayer Reminder",
+  "name": "Muslim Prayer Reminder",
   "version": "1.0.0",
   "description": "Muslim Daily Prayer Time Reminder / Salah Reminder / Namaz Reminder",
   "action": {
