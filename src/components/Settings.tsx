@@ -15,13 +15,11 @@ import { InfoIcon } from "./ui/Icons"
 import { TooltipContent, TooltipTrigger, Tooltip, TooltipProvider } from "./ui/tooltip"
 
 
-
-
 export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettingsForm) => void }) => {
 
     const [allCities, setAllCities] = useState<ICity[]>([])
 
-    const { control, handleSubmit, watch, setValue, setError, clearErrors, formState: { isSubmitting, errors, isValid } } = useForm<PrayerSettingsForm>({
+    const { control, handleSubmit, watch, setValue, clearErrors, formState: { isSubmitting, errors, isValid } } = useForm<PrayerSettingsForm>({
         mode: "onChange",
         defaultValues: {
             Country: {
@@ -280,7 +278,7 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                         {Object.keys(tune).map(prayer => (
                             <Controller
                                 key={prayer}
-                                name={`Tune.${prayer}`}
+                                name={`Tune.${prayer as keyof PrayerSettingsForm["Tune"]}`}
                                 control={control}
                                 render={({ field }) => (
 
@@ -295,7 +293,7 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                                                     type="button"
                                                     variant={"ghost"}
                                                     disabled={(field.value) >= 30 ? true : false}
-                                                    onClick={() => { setValue(`Tune.${prayer}`, field.value + 1) }}
+                                                    onClick={() => { setValue(`Tune.${prayer as keyof PrayerSettingsForm["Tune"]}`, field.value + 1) }}
                                                     className="cursor-pointer">
                                                     <ChevronUp />
                                                 </Button>
@@ -305,7 +303,7 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                                                     type="button"
                                                     variant={"ghost"}
                                                     disabled={(field.value) <= -15 ? true : false}
-                                                    onClick={() => { setValue(`Tune.${prayer}`, field.value - 1) }}
+                                                    onClick={() => { setValue(`Tune.${prayer as keyof PrayerSettingsForm["Tune"]}`, field.value - 1) }}
                                                     className="cursor-pointer">
                                                     <ChevronDown />
                                                 </Button>

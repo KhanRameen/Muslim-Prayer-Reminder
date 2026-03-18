@@ -4,12 +4,12 @@ import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "./ui/dialog"
 import { Settings } from "./Settings"
 import { LoadingScreen } from "./LoadingScreen"
-import type { PrayerSettingsForm } from "./types/types"
+import type { PrayerDataType, PrayerSettingsForm, Timings } from "./types/types"
 import { ErrorScreen } from "./ErrorScreen"
 
-const AllPrayersDisplay = [
+const AllPrayersDisplay= [
     {
-        timingKey: "Fajr",
+        timingKey: "Fajr" ,
         Icon: FajrIcon
     },
     {
@@ -36,11 +36,11 @@ const AllPrayersDisplay = [
 ]
 
 
-const getPrayerTimeline = (data) => {
-    const list = [];
+const getPrayerTimeline = (data: PrayerDataType) => {
+    const list: {name:string ,date:Date}[] = [];
     const skipList = ["Firstthird", "Imsak", "Lastthird", "Midnight", "Sunset"]
 
-    function add(dayOffset, name, time) {
+    function add(dayOffset:number, name:string, time:string) {
         const [h, m] = time.split(':').map(Number)
         const d = new Date();
         d.setDate(d.getDate() + dayOffset)
@@ -54,7 +54,7 @@ const getPrayerTimeline = (data) => {
 
     }
 
-    Object.entries(data.today.timings).filter(([name, time]) => !skipList.includes(name)).forEach(([name, time]) => {
+    Object.entries(data.today.timings).filter(([name]) => !skipList.includes(name)).forEach(([name, time]) => {
         add(0, name, time)
 
     })
@@ -64,11 +64,16 @@ const getPrayerTimeline = (data) => {
 
     }
 
-    return list.sort((a, b) => a.date - b.date)
+    return list.sort((a, b) => Number(a.date) - Number(b.date))
 
 }
 
-const getCurrentAndNextPrayerTime = (timeline) => {
+const getCurrentAndNextPrayerTime = (
+    timeline: {
+    name: string;
+    date: Date;
+    }[]
+) => {
     console.log("Inside current Next, timeline param:", timeline)
     const now = new Date();
     console.log("NOW:", now)
@@ -99,9 +104,9 @@ const getCurrentAndNextPrayerTime = (timeline) => {
 }
 
 
-const getTimeLeft = (targetDate): string => {
+const getTimeLeft = (targetDate:Date): string => {
     console.log("getting time left")
-    const diff = targetDate - new Date()
+    const diff = Number(targetDate) - Number(new Date())
     const totalMinutes = Math.ceil(diff / 60000)
     const hours = Math.floor(totalMinutes / 60)
     const minutes = totalMinutes % 60;
@@ -130,36 +135,40 @@ const getTimeFormated = (date: Date) => {
 
 
 
-export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettingsForm, setSettings: (Settings: PrayerSettingsForm) => void }) => {
+export const MainScreen = ({ setSettings }: { setSettings: (Settings: PrayerSettingsForm) => void }) => {
     const [screenState, setScreenState] = useState<"loading" | "ready" | "error">("loading")
-    const [data, setData] = useState<any>(null)
+    const [data, setData] = useState<PrayerDataType["today"]|null>(null)
     const [currentPrayer, setCurrentPrayer] = useState<{ name: string, date: Date }>()
-    const [nextPrayer, setNextPrayer] = useState<{ name: string, date: Date }>()
+    const [nextPrayer, setNextPrayer] = useState<{ name: string, date: Date } | null>()
     const [timeLeft, setTimeLeft] = useState<string>()
     const [location, setLocation] = useState({ city: "", country: "" })
 
     useEffect(() => {
     const loadData = () => {
-        chrome.storage.local.get(["apiResult", "apiError"], ({ apiResult , apiError}) => {
-        if (apiError || !apiResult.today) {
+        chrome.storage.local.get(["apiResult", "apiError"], ({ apiResult, apiError}) => {
+        if (apiError) {
+        setScreenState("error")
+        return
+        }
+    
+        if (!apiResult) {
+            setScreenState("loading")
+            return
+        }   
+
+        const ApiResult: PrayerDataType | null = apiResult?? null
+         if (!ApiResult?.today) {
         setScreenState("error")
         return
     }
-
-    if (!apiResult) {
-        setScreenState("loading")
-        return
-    }
-
-            setScreenState("ready")
-            setData(apiResult.today)
-
-            const timeline = getPrayerTimeline(apiResult)
-            const { current, next } = getCurrentAndNextPrayerTime(timeline)
-
-            setCurrentPrayer(current)
-            setNextPrayer(next)
-            setTimeLeft(() => getTimeLeft(next?.date!))
+        setScreenState("ready")
+        setData(ApiResult!.today)
+         
+        const timeline = getPrayerTimeline(ApiResult)
+        const { current, next } = getCurrentAndNextPrayerTime(timeline)
+        setCurrentPrayer(current)
+        setNextPrayer(next)
+        setTimeLeft(() => getTimeLeft(next?.date!))
         })
 
         chrome.storage.local.get("prayerSettings", ({ prayerSettings }) => {
@@ -194,9 +203,9 @@ export const MainScreen = ({ settings, setSettings }: { settings: PrayerSettings
 return (
         <>
             {screenState === 'loading' ? <LoadingScreen /> : 
-                <div className="flex flex-col gap-y-3 p-0.5 text-[#3A3843]">
-                
-                        <><div className="grid grid-cols-2 mb-14">
+                <div className="flex flex-col gap-y-2 p-0.5 text-[#3A3843]">                
+                    <>
+                        <div className="grid grid-cols-[3fr_1fr] mb-10">
                             <div className="flex gap-x-1.5">
                                 <LocationIcon />
                                 <p className="font-numans">{location.city}, {location.country}</p>
@@ -217,12 +226,12 @@ return (
                             </div>
                         </div>
 
-                           { screenState === 'error' || !data ? <ErrorScreen /> 
-                           : data && 
-                                <>
-                                <div className="p-1 flex flex-col justify-center text-center">
+                        { screenState === 'error' || !data ? <ErrorScreen /> 
+                        : data && 
+                        <>
+                            <div className="p-1 flex flex-col justify-center text-center">
                                 <p
-                                    className="font-numans p-1">
+                                    className="font-numans pt-1">
                                     {data.date.hijri.month.en}, {data.date.hijri.day}, {data.date.hijri.year} {data.date.hijri.designation.abbreviated}
                                 </p>
                                 {currentPrayer &&
@@ -237,7 +246,7 @@ return (
                                         </span>
                                     </div>
                                 }
-                                <p dir="rtl" className="text-[16px] mb-4">حيَّ عَلَى الصَّلَاة, حَيَّ عَلَى الْفَلَاح</p>
+                                <p dir="rtl" className="text-[16px] mb-5">حيَّ عَلَى الصَّلَاة, حَيَّ عَلَى الْفَلَاح</p>
 
                             </div>
 
@@ -250,9 +259,8 @@ return (
                                 }
                                 <div className="mt-10 grid grid-cols-6 gap-x-2 justify-around">
                                     {AllPrayersDisplay.map(({ timingKey, Icon }) => {
-                                        const time = data?.timings?.[timingKey]
+                                        const time = data?.timings?.[timingKey as keyof Timings]
                                         // if (!time || !Icon) return null;
-
                                         return (
                                             <div key={timingKey} className="h-10 flex flex-col items-center">
                                                 <div className={`align-middle items-center h-5 ${timingKey===nextPrayer?.name? "opacity-100" : "opacity-50"}`}><Icon /></div>
@@ -263,15 +271,13 @@ return (
                                     })}
 
                                 </div>
-
-
                             </div>
-                            </>}
-
-                        </>
-                
-
-                </div>}
+                        </>}
+                    <div className="flex flex-col items-center justify-end mx-auto mt-11">
+                    <p className="opacity-80">Powered by Aladhan API</p>
+                    </div>
+                    </>              
+            </div>}
         </>
 
     )
