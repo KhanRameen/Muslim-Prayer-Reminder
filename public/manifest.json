@@ -12,18 +12,9 @@
     "type": "module"
   },
   "permissions": [
-    "scripting",
     "storage",
-    "activeTab",
-    "tabs",
     "alarms",
     "notifications"
   ],
-  "host_permissions": ["https://api.aladhan.com/*"],
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ]
+  "host_permissions": ["https://api.aladhan.com/*"]
 }
