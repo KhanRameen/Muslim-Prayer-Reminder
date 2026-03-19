@@ -15,13 +15,11 @@ import { InfoIcon } from "./ui/Icons"
 import { TooltipContent, TooltipTrigger, Tooltip, TooltipProvider } from "./ui/tooltip"
 
 
-
-
 export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettingsForm) => void }) => {
 
     const [allCities, setAllCities] = useState<ICity[]>([])
 
-    const { control, handleSubmit, watch, setValue, setError, clearErrors, formState: { isSubmitting, errors, isValid } } = useForm<PrayerSettingsForm>({
+    const { control, handleSubmit, watch, setValue, clearErrors, formState: { isSubmitting, errors, isValid } } = useForm<PrayerSettingsForm>({
         mode: "onChange",
         defaultValues: {
             Country: {
@@ -71,8 +69,8 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
 
     return (
         <ScrollArea className="h-115 rounded-md w-full">
-            <div className="w-full flex flex-col p-1">
-                <form onSubmit={handleSubmit(savePrayerSettings)} className="space-y-4">
+            <div className="w-full flex flex-col py-1">
+                <form onSubmit={handleSubmit(savePrayerSettings)} className="space-y-4 px-1">
                     {/* <h1 className="font-medium text-lg">Notification Settings</h1>
 
                     <Controller
@@ -105,8 +103,10 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                         )} />
  */}
 
-
+                    <div>
                     <h1 className="font-medium text-[19px]">Prayer Time Settings</h1>
+                    <p className="text-[#3E424B]/90 font-numans">Set your location and calculation preferences</p>
+                    </div>
 
                     <div>
                         <Label className="mb-2">Country</Label>
@@ -201,35 +201,50 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                             </Select>
                         )} />
 
-                    <div className="my-0.5">
-                        <Label>Juristic Method / School</Label>
+                    <div className="my-1 max-w-full py-1">
+                        <Label className="pb-1">Juristic Method / School</Label>
                         <Controller
                             name="JuristicMethod"
                             control={control}
                             render={({ field }) => (
-                                <RadioGroup className="flex gap-3 mt-3 mb-5 px-2 " value={field.value} onValueChange={field.onChange}>
-                                    <RadioGroupItem value="0" id="0" className="cursor-pointer" />
-                                    <Label htmlFor="0">Shafi</Label>
-                                    <RadioGroupItem value="1" id="1" className="cursor-pointer" />
-                                    <Label htmlFor="1">Hanafi (Later Asr)</Label>
+                                // <RadioGroup className="flex gap-3 mt-3 mb-5 px-2 " value={field.value} onValueChange={field.onChange}>
+                                //     <RadioGroupItem value="0" id="0" className="cursor-pointer" />
+                                //     <Label htmlFor="0">Shafi</Label>
+                                //     <RadioGroupItem value="1" id="1" className="cursor-pointer" />
+                                //     <Label htmlFor="1">Hanafi (Later Asr)</Label>
+                                // </RadioGroup>
+                                <RadioGroup className="flex gap-3 my-2 w-[320]" value={field.value} onValueChange={field.onChange}>
+                                    {[{ value: "0", label: "Shafi" }, { value: "1", label: "Hanafi (Later Asr)" }].map(opt => (
+                                        <Label
+                                            key={opt.value}
+                                            htmlFor={opt.value}
+                                            className={`flex-1 flex items-center justify-center h-9 rounded-md border text-sm cursor-pointer transition-colors font-prompt
+                                                ${field.value === opt.value
+                                                    ? "border-[#e2e2e2] bg-[#3E424B] text-white drop-shadow-sm"
+                                                    : "border-[#3E424B]/20 bg-background/15 hover:bg-accent hover:text-accent-foreground text-black/60"}`}>
+                                            <RadioGroupItem value={opt.value} id={opt.value} className="sr-only" />
+                                            {opt.label}
+                                        </Label>
+                                    ))}
                                 </RadioGroup>
                             )} />
-
                     </div>
+
                     <div className="py-1">
                         <Controller
                             name="MidnightMode"
                             control={control}
                             defaultValue={"0"}
                             render={({ field }) => (
-                                <div className="flex items-center gap-3">
+                                <div className="flex flex-row items-center align-middle gap-3">
 
                                     <TooltipProvider>
                                         <Tooltip>
-                                            <TooltipTrigger className="flex gap-1 cursor-pointer mt-1">                                            <InfoIcon />
-                                                <Label htmlFor="midnightMode">Midnight Mode</Label>
+                                            <TooltipTrigger className="flex gap-1 cursor-pointer mt-1">                                            
+                                                <InfoIcon />
+                                                <Label htmlFor="midnightMode" className="ml-0.5">Midnight Mode</Label>
                                             </TooltipTrigger>
-                                            <TooltipContent>
+                                            <TooltipContent className="mx-3 max-w-[350] bg-[#24272b]">
                                                 <p>Determines Jafri method for Calculating Midnight (Mid Sunset to Fajr)</p>
                                             </TooltipContent>
                                         </Tooltip>
@@ -242,40 +257,35 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                                             field.onChange(checked ? "1" : "0");  // turn boolean back into string
                                         }} />
                                 </div>
-
-
                             )} />
-
                     </div>
-                    <div>
 
+                    <div>
                         <TooltipProvider>
                             <Tooltip>
-                                <TooltipTrigger className="flex gap-1 cursor-pointer mt-1">                <InfoIcon />
-                                    <Label> Adjust prayer time</Label>
+                                <TooltipTrigger className="flex gap-1 cursor-pointer mt-1">                
+                                    <InfoIcon />
+                                    <Label className="ml-0.5"> Adjust prayer time</Label>
                                 </TooltipTrigger>
-                                <TooltipContent className="max-w-[340] pl-3">
-                                    <p className="max-w-fit">Tune your prayer time in minutes. Adjusting time of one prayer does not affect time of other prayers</p>
+                                <TooltipContent className="max-w-[350] mx-3 bg-[#24272b]">
+                                    <p className="max-w-fit">Optionally tune your prayer time in minutes. Note that adjusting time of one prayer does not affect time of other prayers</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-
                     </div>
 
-                    <div className="gap-2 grid grid-cols-3">
+                    <div className="gap-y-2.5 gap-x-1.5 grid grid-cols-3">
                         {Object.keys(tune).map(prayer => (
                             <Controller
                                 key={prayer}
-                                name={`Tune.${prayer}`}
+                                name={`Tune.${prayer as keyof PrayerSettingsForm["Tune"]}`}
                                 control={control}
                                 render={({ field }) => (
 
                                     <div className="m-1">
                                         <strong> {prayer} </strong>
                                         <div className="flex">
-
-                                            <input type="number" max={30} min={-15} {...field} className="border text-center w-15" />
-
+                                            <input type="number" max={30} min={-15} {...field} className="border text-center w-15 rounded-sm bg-amber-50/10"/>
                                             <div className="flex flex-col">
 
                                                 <Button
@@ -283,7 +293,7 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                                                     type="button"
                                                     variant={"ghost"}
                                                     disabled={(field.value) >= 30 ? true : false}
-                                                    onClick={() => { setValue(`Tune.${prayer}`, field.value + 1) }}
+                                                    onClick={() => { setValue(`Tune.${prayer as keyof PrayerSettingsForm["Tune"]}`, field.value + 1) }}
                                                     className="cursor-pointer">
                                                     <ChevronUp />
                                                 </Button>
@@ -293,7 +303,7 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                                                     type="button"
                                                     variant={"ghost"}
                                                     disabled={(field.value) <= -15 ? true : false}
-                                                    onClick={() => { setValue(`Tune.${prayer}`, field.value - 1) }}
+                                                    onClick={() => { setValue(`Tune.${prayer as keyof PrayerSettingsForm["Tune"]}`, field.value - 1) }}
                                                     className="cursor-pointer">
                                                     <ChevronDown />
                                                 </Button>
@@ -304,11 +314,12 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
 
                         ))}
                     </div>
-                    <Button type="submit" disabled={isSubmitting || !isValid} className="w-full cursor-pointer">{isSubmitting ? <span className="cursor-pointer h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-white/90" /> : "Save"}</Button>
+                    <Button type="submit" disabled={isSubmitting || !isValid} className="w-[330] cursor-pointer">{isSubmitting ? <span className="cursor-pointer h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-white/90" /> : "Save"}</Button>
                 </form >
             </div >
         </ScrollArea>
     )
 }
 
-//todo: add notification setting form and logic.
+// //todo: add notification setting form and logic.
+

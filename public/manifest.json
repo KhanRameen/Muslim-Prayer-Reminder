@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Prayer Reminder",
+  "name": "Muslim Prayer Reminder",
   "version": "1.0.0",
   "description": "Muslim Daily Prayer Time Reminder / Salah Reminder / Namaz Reminder",
   "action": {
@@ -12,18 +12,9 @@
     "type": "module"
   },
   "permissions": [
-    "scripting",
     "storage",
-    "activeTab",
-    "tabs",
     "alarms",
     "notifications"
   ],
-  "host_permissions": ["https://api.aladhan.com/*"],
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ]
+  "host_permissions": ["https://api.aladhan.com/*"]
 }

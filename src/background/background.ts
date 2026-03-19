@@ -1,4 +1,4 @@
-import type { PrayerSettingsForm } from "@/components/types/types";
+import type { AladhanResponse, PrayerDataType, PrayerSettingsForm } from "@/components/types/types";
 
 chrome.runtime.onInstalled.addListener(async() => {
   chrome.storage.local.clear()
@@ -11,14 +11,18 @@ chrome.runtime.onStartup.addListener(async() => {
 });
 
 //eventListener
-chrome.runtime.onMessage.addListener(async (message, sender, sendResonse) => {
+chrome.runtime.onMessage.addListener(async (message) => {
   //getUserSettings (data from Popup)
   if (message.type === "prayerSettingsStored") {
     //call API
-      const apiResult=await getPrayerData()
+      await chrome.storage.local.remove(["apiResult", "apiError"]);
+      const apiResult: PrayerDataType | null = await getPrayerData()
+      if(!apiResult){
+        console.log("API result missing, skipping...");
+        return;
+      }
       schedulePrayerAlarms(apiResult)
-      scheduleNextMidnight()
-    sendResonse({response:"Success"})  
+      scheduleNextMidnight()  
   }
   return true;
 });
@@ -27,7 +31,10 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResonse) => {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === "midnightUpdate") {
       const apiResult=await getPrayerData()
-      schedulePrayerAlarms(apiResult)
+      if(!apiResult){
+        console.log("No Api Result Found for midnight update")
+      }
+      schedulePrayerAlarms(apiResult!)
       scheduleNextMidnight()
   }
 
@@ -100,7 +107,6 @@ const getStorage: (key:string) => any = (key) =>
     chrome.storage.local.get(key, resolve)
   );
 
-
 const getPrayerData = async () => {
   console.log("getting prayer time");
 
@@ -132,74 +138,75 @@ const getPrayerData = async () => {
         fetchPrayerAPI(prayerSettings,dateTomorrow)
       ])
 
-      if(!y && !t && !tm){
+      if(!y || !t || !tm){
         throw new Error("Failed to fetch Api Data")
       }
 
-      const prayerData={
-        yesterdayIsha:y.timings.Isha,
-        today:t,
-        tomorrowsFajr:tm.timings.Fajr
+      const prayerData: PrayerDataType={
+        yesterdayIsha:y!.timings.Isha,
+        today:t!,
+        tomorrowsFajr:tm!.timings.Fajr
       }
 
       await chrome.storage.local.set({
         apiResult: prayerData,
       });
       console.log("New API Result",prayerData)
-      return {apiResult:prayerData}
+      return prayerData
     }
     catch(err:any){
-       console.log("error getting prayer data", err);
+      console.log("error getting prayer data", err);
       await chrome.storage.local.set({ apiError: err.message });
-      return {apiResult:null}
+      return null
     }
   
 };
+
 
 const fetchPrayerAPI = async (formData:PrayerSettingsForm, date:string) => {
   try {
     console.log("Fetching Api")
     const res:any = await fetch(
-      `https://api.aladhan.com/v1/timingsByCity/${date}?city=${formData.City}&country=${formData.Country.isoCode}&method=${formData.CalculationMethod}&shafaq=general&tune=5%2C${formData.Tune.Fajr}%2C${formData.Tune.Sunrise}%2C${formData.Tune.Dhuhr}%2C${formData.Tune.Asr}%2C${formData.Tune.Maghrib}%2C0%2C${formData.Tune.Isha}%2C-6&school=${formData.JuristicMethod}&midnightMode=${formData.MidnightMode}timezonestring=UTC&calendarMethod=UAQ`
+      `https://api.aladhan.com/v1/timingsByCity/${date}?city=${formData.City}&country=${formData.Country.isoCode}&method=${formData.CalculationMethod}&shafaq=general&tune=5%2C${formData.Tune.Fajr}%2C${formData.Tune.Sunrise}%2C${formData.Tune.Dhuhr}%2C${formData.Tune.Asr}%2C${formData.Tune.Maghrib}%2C0%2C${formData.Tune.Isha}%2C-6&school=${formData.JuristicMethod}&midnightMode=${formData.MidnightMode}&calendarMethod=UAQ`
     );
 
     if (!res.ok) {
       throw new Error(`API Failed. Date: ${date}, Status: ${res.status}, data:${res.data}`);
     }
 
-    const response = await res.json();
+    const response: AladhanResponse = await res.json();
 
     if (!response.data) {
       throw new Error("Fetching API data failed");
     }
-
     return response.data
+
   } catch (err:any) {
     console.log("error fetching prayer time", err);
     await chrome.storage.local.set({ apiError: err.message });
+    return null
   }
 };
 
 const ensurePrayerData = async () => {
+  const { apiResult } = await getStorage("apiResult");
 
-  const {apiResult}= await getStorage("apiResult")  
-    const now=new Date()
-    const today = formatDate(now);
+  const now = new Date();
+  const today = formatDate(now);
 
-    if (!apiResult && apiResult.today.date.gregorian.date != today) {
+  if (!apiResult || apiResult.today.date.gregorian.date !== today) {
+    console.log("EnsurePrayer Data Failed");
 
-      console.log("EnsurePrayer Data Failed")
-      const newApiResult=await getPrayerData()
-      schedulePrayerAlarms(newApiResult)
-      scheduleNextMidnight()
-   
-    }
-    else{
-      console.log("Todays prayer data and alarm exist")
-    }
-    
- 
+    const newApiResult = await getPrayerData();
+    if (!newApiResult) return;
+
+    schedulePrayerAlarms(newApiResult);
+    scheduleNextMidnight();
+  } else {
+    console.log("Todays prayer data and alarm exist");
+  }
 };
+
 
 const formatDate = (date: Date) => {
   const day = date.getDate().toString().padStart(2,"0")
@@ -222,7 +229,7 @@ const scheduleNextMidnight = () => {
   });
 };
 
-const schedulePrayerAlarms = (apiResult:any) => {
+const schedulePrayerAlarms = (apiResult:PrayerDataType) => {
   const prayerList= buildPrayerTimelineforAlarm(apiResult)
   if(!prayerList){
     return
@@ -253,7 +260,7 @@ const schedulePrayerAlarms = (apiResult:any) => {
 }
 
 
-const buildPrayerTimelineforAlarm = ({apiResult}:any) => {
+const buildPrayerTimelineforAlarm = (apiResult:PrayerDataType) => {
   console.log('Building Timeline', Object.keys(apiResult), "object:", apiResult) 
   
   const today=apiResult.today
@@ -265,13 +272,10 @@ const buildPrayerTimelineforAlarm = ({apiResult}:any) => {
     const date=apiResult.today?.date?.gregorian?.date
     const timings=apiResult.today?.timings
 
-    console.error("BUILDING timings", timings,"date",date)
-
-    const prayersToday: {name:string,time:string}[] = []   
-
+    const prayersToday: {name:string,time:string}[] = []  
      
     Object.entries(timings??{})
-      .filter(([name, time]) => !skipList.includes(name))
+      .filter(([name]) => !skipList.includes(name))
       .forEach(([name, time]) => {
         console.log("Object Entries")
         const timestamp = buildTimestamps(date, String(time))
