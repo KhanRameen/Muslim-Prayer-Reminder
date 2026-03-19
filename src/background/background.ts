@@ -18,7 +18,8 @@ chrome.runtime.onMessage.addListener(async (message) => {
       await chrome.storage.local.remove(["apiResult", "apiError"]);
       const apiResult: PrayerDataType | null = await getPrayerData()
       if(!apiResult){
-        throw new Error("failed to generate api")
+        console.log("API result missing, skipping...");
+        return;
       }
       schedulePrayerAlarms(apiResult)
       scheduleNextMidnight()  
@@ -31,7 +32,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === "midnightUpdate") {
       const apiResult=await getPrayerData()
       if(!apiResult){
-        throw new Error("No Api Result Found for midnight update")
+        console.log("No Api Result Found for midnight update")
       }
       schedulePrayerAlarms(apiResult!)
       scheduleNextMidnight()
@@ -166,7 +167,7 @@ const fetchPrayerAPI = async (formData:PrayerSettingsForm, date:string) => {
   try {
     console.log("Fetching Api")
     const res:any = await fetch(
-      `https://api.aladhan.com/v1/timingsByCity/${date}?city=${formData.City}&country=${formData.Country.isoCode}&method=${formData.CalculationMethod}&shafaq=general&tune=5%2C${formData.Tune.Fajr}%2C${formData.Tune.Sunrise}%2C${formData.Tune.Dhuhr}%2C${formData.Tune.Asr}%2C${formData.Tune.Maghrib}%2C0%2C${formData.Tune.Isha}%2C-6&school=${formData.JuristicMethod}&midnightMode=${formData.MidnightMode}timezonestring=UTC&calendarMethod=UAQ`
+      `https://api.aladhan.com/v1/timingsByCity/${date}?city=${formData.City}&country=${formData.Country.isoCode}&method=${formData.CalculationMethod}&shafaq=general&tune=5%2C${formData.Tune.Fajr}%2C${formData.Tune.Sunrise}%2C${formData.Tune.Dhuhr}%2C${formData.Tune.Asr}%2C${formData.Tune.Maghrib}%2C0%2C${formData.Tune.Isha}%2C-6&school=${formData.JuristicMethod}&midnightMode=${formData.MidnightMode}&calendarMethod=UAQ`
     );
 
     if (!res.ok) {
@@ -183,31 +184,28 @@ const fetchPrayerAPI = async (formData:PrayerSettingsForm, date:string) => {
   } catch (err:any) {
     console.log("error fetching prayer time", err);
     await chrome.storage.local.set({ apiError: err.message });
+    return null
   }
 };
 
 const ensurePrayerData = async () => {
-    const {apiResultFromStorage} = await getStorage("apiResult") 
-    const apiResult:PrayerDataType| null = apiResultFromStorage? apiResultFromStorage : null
-    
-    const now=new Date()
-    const today = formatDate(now);
+  const { apiResult } = await getStorage("apiResult");
 
-    if (!apiResult || apiResult.today.date.gregorian.date != today) {
-      console.log("EnsurePrayer Data Failed")
-      const newApiResult: PrayerDataType | null =await getPrayerData()
-      if(!newApiResult){
-        return
-      }
-      schedulePrayerAlarms(newApiResult)
-      scheduleNextMidnight()
-   
-    }
-    else{
-      console.log("Todays prayer data and alarm exist")
-    }
-}
- 
+  const now = new Date();
+  const today = formatDate(now);
+
+  if (!apiResult || apiResult.today.date.gregorian.date !== today) {
+    console.log("EnsurePrayer Data Failed");
+
+    const newApiResult = await getPrayerData();
+    if (!newApiResult) return;
+
+    schedulePrayerAlarms(newApiResult);
+    scheduleNextMidnight();
+  } else {
+    console.log("Todays prayer data and alarm exist");
+  }
+};
 
 
 const formatDate = (date: Date) => {
