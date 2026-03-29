@@ -196,7 +196,9 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                                     <SelectValue placeholder="Select a Calculation Method" />
                                 </SelectTrigger>
                                 <SelectContent className="h-60 w-[320]">
-                                    {calculationMethods.map((method, index) => <SelectItem key={index} value={index.toString()}> {method}</SelectItem>)}
+                                    {calculationMethods
+                                     .filter((method) => method!== "Moonsighting Committee Worldwide (also requires shafaq parameter)" )
+                                    .map((method, index) => <SelectItem key={index} value={index.toString()}> {method}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         )} />
@@ -268,7 +270,7 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
                                     <Label className="ml-0.5"> Adjust prayer time</Label>
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-[350] mx-3 bg-[#24272b]">
-                                    <p className="max-w-fit">Optionally tune your prayer time in minutes. Note that adjusting time of one prayer does not affect time of other prayers</p>
+                                    <p className="max-w-fit">Optionally tune your prayer time in minutes. Note that adjusting the time of one prayer does not affect the time of other prayers</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>

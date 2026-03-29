@@ -3,52 +3,78 @@ import type { AladhanResponse, PrayerDataType, PrayerSettingsForm } from "@/comp
 chrome.runtime.onInstalled.addListener(async() => {
   chrome.storage.local.clear()
   chrome.alarms.clearAll();
-  ensurePrayerData();
+  await dailyPrayerSetup();
  });
 
 chrome.runtime.onStartup.addListener(async() => {
-  await ensurePrayerData();
+  await dailyPrayerSetup();
 });
 
 //eventListener
-chrome.runtime.onMessage.addListener(async (message) => {
+chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
   //getUserSettings (data from Popup)
   if (message.type === "prayerSettingsStored") {
     //call API
       await chrome.storage.local.remove(["apiResult", "apiError"]);
-      const apiResult: PrayerDataType | null = await getPrayerData()
+      let apiResult: PrayerDataType | null = await getPrayerData()
+      let i = 0
+
+    while (!apiResult && i<=3){
+      apiResult = await getPrayerData();
+      i++
+    }
+
       if(!apiResult){
         console.log("API result missing, skipping...");
         return;
       }
-      schedulePrayerAlarms(apiResult)
+
+      schedulePrayerAlarms(apiResult!)
       scheduleNextMidnight()  
+      scheduleApiDataRefresh()
+
+      return true
   }
-  return true;
+
+  if(message.type==="apiDataRefresh"){
+    console.log("Refreshing api data")
+    dailyPrayerSetup()
+      .then(() => sendResponse({ success: true }))
+      .catch(() => sendResponse({ success: false }));
+
+    return true
+  }
+
 });
 
 //alarmListener
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === "midnightUpdate") {
-      const apiResult=await getPrayerData()
-      if(!apiResult){
-        console.log("No Api Result Found for midnight update")
-      }
-      schedulePrayerAlarms(apiResult!)
-      scheduleNextMidnight()
+  if (alarm.name === "midnightUpdate" || alarm.name === "apiDataRefresh") {
+      await dailyPrayerSetup();
   }
 
   if(alarm.name.startsWith("prayer-")){
     console.log("Listening Alarm for Prayer")
     const now = Date.now()
 
-    const [,name,nextAlarmTime]=alarm.name.split("-").map(String)
+    const [,name, prayerTimeStr, nextPrayerTimeStr]=alarm.name.split("-").map(String)
 
-    if( now > Number(nextAlarmTime) - 10*60*1000){
-      return 
-    }
+    const prayerTime = Number(prayerTimeStr)
+    const nextPrayerTime = Number(nextPrayerTimeStr)
+
+    //too late for this prayer (stale)
+if (now - prayerTime > 20 * 60 * 1000) {
+  console.log("Skipping stale prayer:", name)
+  return
+}
+
+//next prayer already started
+if (now >= nextPrayerTime) {
+  console.log("Skipping because next prayer started:", name)
+  return
+}
     
-    showPrayerNotification(name,nextAlarmTime)
+    showPrayerNotification(name, nextPrayerTime)
   }
 
   if(alarm.name.startsWith("snooze-")){
@@ -91,7 +117,7 @@ chrome.notifications.onButtonClicked.addListener(
     console.log("Listening to Notification button click")
     if(notificationId.startsWith("notify-") || notificationId.startsWith("snooze-")){
       const [,name,nextPrayerTime]=notificationId.split("-").map(String)
-      const snoozeTime=Date.now()+15*50*1000
+      const snoozeTime=Date.now()+15*60*1000
 
       chrome.alarms.create(`snooze-${name}-${nextPrayerTime}`,{when:snoozeTime})
 
@@ -102,6 +128,34 @@ chrome.notifications.onButtonClicked.addListener(
 )
 
 //Controllers
+const dailyPrayerSetup = async () => {
+  const { apiResult } = await getStorage("apiResult");
+
+  if (!apiResult || isDataStale(apiResult)) {
+    console.log("Refreshing Prayer Data");
+
+    let newApiResult : PrayerDataType | null  = null
+
+    let i = 0
+
+    while (!newApiResult && i<=3){
+      newApiResult = await getPrayerData();
+      i++
+    }
+
+    if(!newApiResult) return false
+
+    schedulePrayerAlarms(newApiResult);
+    scheduleNextMidnight();
+    scheduleApiDataRefresh()
+    return true
+  } else {
+    console.log("Todays prayer data and alarm exist");
+    return true
+  }
+};
+
+
 const getStorage: (key:string) => any = (key) =>
   new Promise((resolve) =>
     chrome.storage.local.get(key, resolve)
@@ -188,25 +242,6 @@ const fetchPrayerAPI = async (formData:PrayerSettingsForm, date:string) => {
   }
 };
 
-const ensurePrayerData = async () => {
-  const { apiResult } = await getStorage("apiResult");
-
-  const now = new Date();
-  const today = formatDate(now);
-
-  if (!apiResult || apiResult.today.date.gregorian.date !== today) {
-    console.log("EnsurePrayer Data Failed");
-
-    const newApiResult = await getPrayerData();
-    if (!newApiResult) return;
-
-    schedulePrayerAlarms(newApiResult);
-    scheduleNextMidnight();
-  } else {
-    console.log("Todays prayer data and alarm exist");
-  }
-};
-
 
 const formatDate = (date: Date) => {
   const day = date.getDate().toString().padStart(2,"0")
@@ -229,18 +264,29 @@ const scheduleNextMidnight = () => {
   });
 };
 
-const schedulePrayerAlarms = (apiResult:PrayerDataType) => {
+const scheduleApiDataRefresh = () => {
+  chrome.alarms.create("apiDataRefresh", {
+    periodInMinutes: 60
+  }
+)
+}
+
+const schedulePrayerAlarms = async (apiResult:PrayerDataType) => {
   const prayerList= buildPrayerTimelineforAlarm(apiResult)
   if(!prayerList){
     return
   }
   const now=Date.now()  
 
+  await new Promise((resolve) => {
   chrome.alarms.getAll((alarms) => {
-  alarms
-    .filter(a => a.name.startsWith("prayer-") ||  a.name.startsWith("snooze-"))
-    .forEach(a => chrome.alarms.clear(a.name));
+    alarms
+      .filter(a => a.name.startsWith("prayer-") || a.name.startsWith("snooze-"))
+      .forEach(a => chrome.alarms.clear(a.name));
+    resolve(null);
+  });
 });
+
     console.log("Scheduling Alarm")
 
     prayerList.forEach(({name,time,nextPrayerTime})=>{
@@ -249,7 +295,7 @@ const schedulePrayerAlarms = (apiResult:PrayerDataType) => {
       if(when<=now) return;
       
       console.log("creating alarm")
-      const alarmName=`prayer-${name}-${nextPrayerTime}`
+      const alarmName=`prayer-${name}-${time}-${nextPrayerTime}`
 
       chrome.alarms.create(alarmName,{when})
 
@@ -350,8 +396,8 @@ const canSnooze = (nextPrayerTime:number) =>{
   return differenceInMin>20
 }
 
-const showPrayerNotification=(name:string,nextPrayerTime:string)=>{  
-  const allowSnooze=canSnooze(Number(nextPrayerTime))
+const showPrayerNotification=(name:string,nextPrayerTime:number)=>{  
+  const allowSnooze=canSnooze(nextPrayerTime)
 
   const options: chrome.notifications.NotificationCreateOptions= {
     type: "basic" as const ,
@@ -374,4 +420,9 @@ const showPrayerNotification=(name:string,nextPrayerTime:string)=>{
   
 }
 
-//handle error: 400 Unable to geocode address
+const isDataStale = (apiResult:PrayerDataType) => {
+  const now = new Date();
+  const today = formatDate(now);
+  const storedData= apiResult?.today?.date?.gregorian?.date
+  return  !storedData || storedData !== today
+}
