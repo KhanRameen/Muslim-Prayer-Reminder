@@ -152,7 +152,8 @@ export const MainScreen = ({ setSettings }: { setSettings: (Settings: PrayerSett
         }
     
         if (!apiResult) {
-            setScreenState("loading")
+            chrome.runtime.sendMessage({ type: "apiDataRefresh" })
+            setScreenState("error")
             return
         }   
 
@@ -168,7 +169,11 @@ export const MainScreen = ({ setSettings }: { setSettings: (Settings: PrayerSett
         const { current, next } = getCurrentAndNextPrayerTime(timeline)
         setCurrentPrayer(current)
         setNextPrayer(next)
-        setTimeLeft(() => getTimeLeft(next?.date!))
+        if (next?.date) {
+    setTimeLeft(getTimeLeft(next.date))
+} else {
+    setTimeLeft(undefined)
+}
         })
 
         chrome.storage.local.get("prayerSettings", ({ prayerSettings }) => {
@@ -185,7 +190,7 @@ export const MainScreen = ({ setSettings }: { setSettings: (Settings: PrayerSett
     loadData()
 
     const listener = (changes: Record<string, chrome.storage.StorageChange>) => {
-        if (changes.apiResult || changes.prayerSettings) {
+        if (changes.apiResult || changes.prayerSettings || changes.apiError) {
             loadData()
         }
         if (changes.apiError && !changes.apiResult) {
@@ -226,7 +231,7 @@ return (
                             </div>
                         </div>
 
-                        { screenState === 'error' || !data ? <ErrorScreen /> 
+                        { screenState === 'error'? <ErrorScreen /> 
                         : data && 
                         <>
                             <div className="p-1 flex flex-col justify-center text-center">
