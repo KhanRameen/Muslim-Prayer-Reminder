@@ -1,6 +1,6 @@
 {
   "name": "prayer-reminder-extention",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "ription": "",
   "devDependencies": {
     "@types/chrome": "^0.1.28",
