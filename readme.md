@@ -4,7 +4,7 @@
 ![Status](https://img.shields.io/badge/status-Live-success)
  <!-- ![License](https://img.shields.io/badge/license-MIT-green) -->
 
- 🔗 **Install** : 
+ 🔗 **Get It Here** : 
  **[Muslim Prayer Reminder - Chrome Web Store](https://chromewebstore.google.com/detail/njmemablbgdiohbddhlfdknfgdjdhebb?utm_source=item-share-cb)**
 
 
@@ -123,11 +123,9 @@ A lightweight and intelligent Chrome Extension that provides **accurate daily pr
 src/
 │
 ├── background/        # Background service worker
-├── components/        # React UI components
+├── components/        # React UI screen components
 ├── popup/             # Extension popup UI
-├── utils/             # Helper functions (timeline, time calculations)
-├── types/             # TypeScript types
-└── assets/            # Icons and static files
+
 ```
 
 ---
