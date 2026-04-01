@@ -5,7 +5,7 @@
 
 //Runs inside the webpage. Can read info from the page or detect user activity. Sends data/messages to background.js.
 
-//Our Usage: get all users settings on the popup and trigger get api
+//unused
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   console.log("Message received in content.js:", message, sender);

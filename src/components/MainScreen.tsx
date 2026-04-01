@@ -146,13 +146,13 @@ export const MainScreen = ({ setSettings }: { setSettings: (Settings: PrayerSett
     useEffect(() => {
     const loadData = () => {
         chrome.storage.local.get(["apiResult", "apiError"], ({ apiResult, apiError}) => {
-        if (apiError) {
+        if (apiError && !apiResult) {
         setScreenState("error")
         return
         }
     
         if (!apiResult) {
-            chrome.runtime.sendMessage({ type: "apiDataRefresh" })
+            // chrome.runtime.sendMessage({ type: "apiDataRefresh" })
             setScreenState("error")
             return
         }   
@@ -259,7 +259,7 @@ return (
                                 {nextPrayer &&
                                     <p
                                         className="font-numans text-[16px]">
-                                        {timeLeft} left in {nextPrayer?.name}
+                                        {timeLeft? `${timeLeft} left in ${nextPrayer?.name}` : '' }
                                     </p>
                                 }
                                 <div className="mt-10 grid grid-cols-6 gap-x-2 justify-around">

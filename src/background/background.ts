@@ -163,6 +163,8 @@ const getStorage: (key:string) => any = (key) =>
 
 const getPrayerData = async () => {
   console.log("getting prayer time");
+  //remove previous data
+  await chrome.storage.local.remove(["apiResult", "apiError"])
 
   //get data from local storage
   const {prayerSettings} = await getStorage("prayerSettings") 
