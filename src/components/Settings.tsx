@@ -60,7 +60,7 @@ export const Settings = ({ setSettings }: { setSettings: (Settings: PrayerSettin
 
     const savePrayerSettings = async (data: PrayerSettingsForm) => {
         console.log(data)
-        await chrome.storage.local.set({ prayerSettings: data })
+        await chrome.storage.local.set({ prayerSettings: data , apiLoading: true})
         chrome.runtime.sendMessage(
             { type: "prayerSettingsStored" }
         )
