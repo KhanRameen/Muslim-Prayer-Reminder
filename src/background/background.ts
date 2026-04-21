@@ -1,8 +1,6 @@
 import type { AladhanResponse, PrayerDataType, PrayerSettingsForm } from "@/components/types/types";
 
 chrome.runtime.onInstalled.addListener(async() => {
-  chrome.storage.local.clear()
-  chrome.alarms.clearAll();
   await dailyPrayerSetup();
  });
 
