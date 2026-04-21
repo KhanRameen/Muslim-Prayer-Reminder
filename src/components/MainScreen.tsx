@@ -143,15 +143,23 @@ export const MainScreen = ({ setSettings }: { setSettings: (Settings: PrayerSett
     const [timeLeft, setTimeLeft] = useState<string>()
     const [location, setLocation] = useState({ city: "", country: "" })
 
+    //bug: no loading state -> gives only error screen
+
     useEffect(() => {
     const loadData = () => {
-        chrome.storage.local.get(["apiResult", "apiError"], ({ apiResult, apiError}) => {
-        if (apiError && !apiResult) {
+        chrome.storage.local.get(["apiResult", "apiError" , "apiLoading"], ({ apiResult, apiError, apiLoading}) => {
+        if(apiLoading==true){
+                setScreenState("loading")
+                return
+        }
+
+        if (apiError && !apiResult && apiLoading==false) {
         setScreenState("error")
         return
         }
+
     
-        if (!apiResult) {
+        if (!apiResult && apiLoading==false) {
             // chrome.runtime.sendMessage({ type: "apiDataRefresh" })
             setScreenState("error")
             return
@@ -190,12 +198,9 @@ export const MainScreen = ({ setSettings }: { setSettings: (Settings: PrayerSett
     loadData()
 
     const listener = (changes: Record<string, chrome.storage.StorageChange>) => {
-        if (changes.apiResult || changes.prayerSettings || changes.apiError) {
+        if (changes.apiResult || changes.prayerSettings || changes.apiError || changes.apiLoading) {
             loadData()
         }
-        if (changes.apiError && !changes.apiResult) {
-        setScreenState("error")
-    }
 
     }
 
@@ -210,15 +215,15 @@ return (
             {screenState === 'loading' ? <LoadingScreen /> : 
                 <div className="flex flex-col gap-y-2 p-0.5 text-[#3A3843]">                
                     <>
-                        <div className="grid grid-cols-[3fr_1fr] mb-10">
-                            <div className="flex gap-x-1.5">
+                        <div className="grid grid-cols-[4fr_1fr] mb-5 h-10 pt-0.5">
+                            <div className="flex gap-x-1.5 min-w-0">
                                 <LocationIcon />
                                 <p className="font-numans">{location.city}, {location.country}</p>
                             </div>
-                            <div className="flex justify-end">
+                            <div className="flex justify-end mb-auto ">
 
                                 <Dialog>
-                                    <DialogTrigger>
+                                    <DialogTrigger className="py-1 align-top">
                                         <EllipsisVertical className="stroke-1 size-5 bg-3A3843 hover:scale-110 transition-transform duration-200 cursor-pointer" />
                                     </DialogTrigger>
                                     <DialogContent className="bg-transparent h-full">

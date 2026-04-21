@@ -1,8 +1,6 @@
 import type { AladhanResponse, PrayerDataType, PrayerSettingsForm } from "@/components/types/types";
 
 chrome.runtime.onInstalled.addListener(async() => {
-  chrome.storage.local.clear()
-  chrome.alarms.clearAll();
   await dailyPrayerSetup();
  });
 
@@ -23,7 +21,7 @@ chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
       apiResult = await getPrayerData();
       i++
     }
-
+    
       if(!apiResult){
         console.log("API result missing, skipping...");
         return;
@@ -32,6 +30,10 @@ chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
       schedulePrayerAlarms(apiResult!)
       scheduleNextMidnight()  
       scheduleApiDataRefresh()
+
+      await chrome.storage.local.set({
+        apiLoading: false,
+      });
 
       return true
   }
@@ -162,10 +164,14 @@ const getStorage: (key:string) => any = (key) =>
   );
 
 const getPrayerData = async () => {
-  console.log("getting prayer time");
+  console.log("getting prayer time"); 
+  
   //remove previous data
   await chrome.storage.local.remove(["apiResult", "apiError"])
-
+  await chrome.storage.local.set({
+    apiLoading: true,
+  });
+  
   //get data from local storage
   const {prayerSettings} = await getStorage("prayerSettings") 
 
@@ -206,13 +212,15 @@ const getPrayerData = async () => {
 
       await chrome.storage.local.set({
         apiResult: prayerData,
+        apiError:null,
+        apiLoading:false
       });
       console.log("New API Result",prayerData)
       return prayerData
     }
     catch(err:any){
       console.log("error getting prayer data", err);
-      await chrome.storage.local.set({ apiError: err.message });
+      await chrome.storage.local.set({ apiError: err.message , apiResult: null , apiLoading:false});
       return null
     }
   
